@@ -1,23 +1,27 @@
 package com.yao.masterspringbatch.model;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.math.BigDecimal;
 
 /**
  * Created by Jack Yao on 2021/12/4 3:54 下午
  */
+@XmlRootElement(name = "product")
 public class Product {
-    private Integer productID;
+
+    private Integer productId;
+//    @XmlElement(name = "productName")
     private String productName;
     private BigDecimal price;
     private Integer unit;
-    private String ProdDesc;
+    private String productDesc;
 
-    public Integer getProductID() {
-        return productID;
+    public Integer getProductId() {
+        return productId;
     }
 
-    public void setProductID(Integer productID) {
-        this.productID = productID;
+    public void setProductId(Integer productId) {
+        this.productId = productId;
     }
 
     public String getProductName() {
@@ -28,12 +32,12 @@ public class Product {
         this.productName = productName;
     }
 
-    public String getProdDesc() {
-        return ProdDesc;
+    public String getProductDesc() {
+        return productDesc;
     }
 
-    public void setProdDesc(String prodDesc) {
-        ProdDesc = prodDesc;
+    public void setProductDesc(String productDesc) {
+        this.productDesc = productDesc;
     }
 
     public BigDecimal getPrice() {
@@ -55,9 +59,9 @@ public class Product {
     @Override
     public String toString() {
         return "Product{" +
-                "productID=" + productID +
+                "productID=" + productId +
                 ", productName='" + productName + '\'' +
-                ", ProductDesc='" + ProdDesc + '\'' +
+                ", ProductDesc='" + productDesc + '\'' +
                 ", price=" + price +
                 ", unit=" + unit +
                 '}';
