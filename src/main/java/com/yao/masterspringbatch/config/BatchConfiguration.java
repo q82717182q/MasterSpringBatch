@@ -19,6 +19,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.skip.AlwaysSkipItemSkipPolicy;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
 import org.springframework.batch.item.database.ItemPreparedStatementSetter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
@@ -75,7 +76,8 @@ public class BatchConfiguration {
 //                .listener(hwJobExecutionListener)
                 .start(step1())
 //                .next(step2())
-                .next(multiThreadStep())/* 改成用multiThread 測試用多少時間 */
+//                .next(multiThreadStep())/* 改成用multiThread 測試用多少時間 */
+                .next(asyncStep())
                 .build();
 
     }
@@ -123,8 +125,8 @@ public class BatchConfiguration {
 //                .reader(xmlItemReader(null))
 //                .reader(jdbcCursorItemReader())
                 .processor(new ProductProcessor())
-//                .writer(dbWriter2())
-                .writer(flatFileItemWriter(null))
+                .writer(dbWriter2())
+//                .writer(flatFileItemWriter(null))
                 .taskExecutor(taskExecutor)
 //                .faultTolerant()
 //                .skip(FlatFileParseException.class)
@@ -136,6 +138,38 @@ public class BatchConfiguration {
     }
 
 
+    @Bean
+    public AsyncItemProcessor asyncItemProcessor(){
+        AsyncItemProcessor processor = new AsyncItemProcessor();
+        return null;
+    }
+    /* async 用不到taskExecutor*/
+    @Bean
+    public Step asyncStep() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(4);
+        taskExecutor.setMaxPoolSize(4);
+        taskExecutor.afterPropertiesSet();
+
+        return steps.get("asyncStep")
+                .<Integer, Integer>chunk(5)
+                .reader(flatFileItemReader(null))
+//                .reader(xmlItemReader(null))
+//                .reader(jdbcCursorItemReader())
+                .processor(new ProductProcessor())
+//                .writer(dbWriter2())
+                .writer(flatFileItemWriter(null))
+//                .faultTolerant()
+//                .skip(FlatFileParseException.class)
+//                .skip(RuntimeException.class)/*測試ProductSkipListener.onSkipProcess用*/
+//                .skipLimit(10)
+//                .skipPolicy(new AlwaysSkipItemSkipPolicy())/*這個三個階段錯誤都會跳過itemRPW*/
+//                .listener(new ProductSkipListener())
+                .build();
+    }
+
+
+
     @StepScope
     @Bean
     public FlatFileItemWriter flatFileItemWriter(
@@ -144,16 +178,14 @@ public class BatchConfiguration {
         FlatFileItemWriter writer = new FlatFileItemWriter<Product>() {
             @Override
             public String doWrite(List<? extends Product> items) {
-                for (Product p : items) {
-                    if (p.getProductId() == 9) {
-                        throw new RuntimeException("Because ID is 9");
-                    }
-                }
+//                for (Product p : items) {
+//                    if (p.getProductId() == 9) {
+//                        throw new RuntimeException("Because ID is 9");
+//                    }
+//                }
                 return super.doWrite(items);
             }
         };
-
-
         writer.setResource(outputFile);
         writer.setLineAggregator(new DelimitedLineAggregator() {
             {
@@ -205,7 +237,7 @@ public class BatchConfiguration {
                         setLineTokenizer(new DelimitedLineTokenizer() {
                             {
                                 /*you want to give a name to each token，there names are mapping to the product*/
-                                setNames(new String[]{"productID", "productName", "ProductDesc", "price", "unit"});
+                                setNames(new String[]{"productID", "productName", "productDesc", "price", "unit"});
 //                               /*if no set, delimiter default ","*/
                                 setDelimiter(",");
                             }
@@ -232,7 +264,7 @@ public class BatchConfiguration {
     public JdbcCursorItemReader jdbcCursorItemReader() {
         JdbcCursorItemReader reader = new JdbcCursorItemReader();
         reader.setDataSource(dataSource);
-        reader.setSql("select prod_id, prod_name as productName , prod_desc as product_desc, unit, price from products");
+        reader.setSql("select product_id, product_name , product_desc as product_desc, unit, price from products");
         reader.setRowMapper(new BeanPropertyRowMapper() {
             {
                 setMappedClass(Product.class);
@@ -255,7 +287,7 @@ public class BatchConfiguration {
     public JdbcBatchItemWriter dbWriter() {
         JdbcBatchItemWriter writer = new JdbcBatchItemWriter();
         writer.setDataSource(this.dataSource);
-        writer.setSql("insert into products (prod_id,prod_name,prod_desc,price,unit) " +
+        writer.setSql("insert into products (product_id,product_name,product_desc,price,unit) " +
                 "values (?,?,?,?,? )");
         writer.setItemPreparedStatementSetter(new ItemPreparedStatementSetter<Product>() {
             @Override
@@ -275,8 +307,8 @@ public class BatchConfiguration {
 
         return new JdbcBatchItemWriterBuilder<Product>()
                 .dataSource(this.dataSource)
-                .sql("insert into products (prod_id,prod_name,prod_desc,price,unit) " +
-                        "values (:prodId, :productName, :productDesc, :price, :unit ) ")
+                .sql("insert into products (product_id,product_name,product_desc,price,unit) " +
+                        "values (:productId, :productName, :productDesc, :price, :unit ) ")
                 .beanMapped()
                 .build();
     }

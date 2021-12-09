@@ -19,7 +19,8 @@ import org.springframework.context.annotation.Bean;
 public class MasterSpringBatchApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MasterSpringBatchApplication.class, args);
+
+        System.exit(SpringApplication.exit(SpringApplication.run(MasterSpringBatchApplication.class, args)));
     }
 
 }

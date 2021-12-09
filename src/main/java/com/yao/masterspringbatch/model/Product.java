@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 /**
  * Created by Jack Yao on 2021/12/4 3:54 下午
  */
-@XmlRootElement(name = "product")
+//@XmlRootElement(name = "product")
 public class Product {
 
     private Integer productId;
